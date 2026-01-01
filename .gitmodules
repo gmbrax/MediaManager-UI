@@ -1,0 +1,4 @@
+[submodule "MediaManager-core"]
+	path = MediaManager-core
+	url = git@github.com:gmbrax/MediaManager-core.git
+	branch = develop

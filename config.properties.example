@@ -1,0 +1,24 @@
+# HikariCP Connection Pool Settings
+db.pool.maximum-pool-size=10
+db.pool.minimum-idle=2
+db.pool.connection-timeout=30000
+db.pool.idle-timeout=600000
+db.pool.max-lifetime=1800000
+
+# Hibernate Settings
+hibernate.dialect=org.hibernate.community.dialect.SQLiteDialect
+hibernate.hbm2ddl.auto=update
+hibernate.show_sql=true
+hibernate.format_sql=true
+
+# IPC Configuration
+ipc.pipe.name=mediamanager-pipe
+ipc.pipe.path=/tmp/mediamanager
+ipc.buffer.size=8192
+ipc.socket.path=/tmp/mediamanager
+
+# Database Configuration
+database.driver=org.sqlite.JDBC
+database.dir=/tmp/mediamanager
+database.filename=mediamanager.db
+runtype=local

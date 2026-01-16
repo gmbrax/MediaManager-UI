@@ -8,6 +8,13 @@ PROTO_COPIED := $(PROTO_DEST)/.copied
 PROTO_GENERATED := $(PROTO_SRC)/.generated
 CONFIG_FILE := ./MediaManager-core/src/main/resources/config.properties
 CONFIG_TEMPLATE := config.properties.example
+
+PYTHON := python
+VENV := .venv
+VENV_BIN := $(VENV)/bin
+DIST_DIR := dist
+EXECUTABLE := $(DIST_DIR)/mediamanager-ui
+
 .PHONY: ALL Clean JClean  JMakePythonProtoBuf Config
 
 ALL: Config CopyProto
@@ -48,3 +55,10 @@ Clean:
 	rm -rf ./src/MediaManager-UI/proto
 	rm MediaManager-core/src/main/resources/config.properties
 	cd MediaManager-core && mvn clean
+
+Setup: $(VENV_BIN)/activate
+
+$(VENV_BIN)/activate:
+	$(PYTHON) -m venv $(VENV)
+	$(VENV_BIN)/pip install --upgrade pip
+	$(VENV_BIN)/pip install protobuf nuitka

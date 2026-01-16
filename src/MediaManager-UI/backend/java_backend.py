@@ -1,7 +1,7 @@
 """
-Java backend adapter for MediaManager UI.
+Java Backend adapter for MediaManager UI.
 
-This backend wraps the existing IPCManager to communicate with the Java core
+This Backend wraps the existing IPCManager to communicate with the Java core
 via Unix socket + Protocol Buffers.
 """
 
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class JavaBackend(IMediaManagerBackend):
     """
-    Java backend adapter using Unix socket + Protocol Buffers.
+    Java Backend adapter using Unix socket + Protocol Buffers.
 
     This class wraps your existing IPCManager to conform to the
     IMediaManagerBackend interface.
@@ -44,7 +44,7 @@ class JavaBackend(IMediaManagerBackend):
 
     def __init__(self, socket_path: Optional[str] = None):
         """
-        Initialize Java backend.
+        Initialize Java Backend.
 
         Args:
             socket_path: Path to Unix socket (default from config)
@@ -57,25 +57,25 @@ class JavaBackend(IMediaManagerBackend):
     # ========================================================================
 
     def connect(self) -> None:
-        """Connect to Java backend via Unix socket."""
+        """Connect to Java Backend via Unix socket."""
         try:
             self._ipc.connect()
-            logger.info("Connected to Java backend")
+            logger.info("Connected to Java Backend")
         except ConnectionError as e:
             raise BackendConnectionError(f"Failed to connect: {e}") from e
         except Exception as e:
             raise BackendConnectionError(f"Unexpected error: {e}") from e
 
     def disconnect(self) -> None:
-        """Disconnect from Java backend."""
+        """Disconnect from Java Backend."""
         try:
             self._ipc.disconnect()
-            logger.info("Disconnected from Java backend")
+            logger.info("Disconnected from Java Backend")
         except Exception as e:
             logger.warning(f"Error during disconnect: {e}")
 
     def is_connected(self) -> bool:
-        """Check if connected to Java backend."""
+        """Check if connected to Java Backend."""
         return self._ipc.connected
 
     # ========================================================================
@@ -84,7 +84,7 @@ class JavaBackend(IMediaManagerBackend):
 
     def call(self, action: str, **params) -> Any:
         """
-        Execute action on Java backend.
+        Execute action on Java Backend.
 
         Args:
             action: Action name (e.g., "genre.create", "artist.getAll")
@@ -100,7 +100,7 @@ class JavaBackend(IMediaManagerBackend):
             BackendInternalError: Internal errors (500)
         """
         if not self.is_connected():
-            raise BackendConnectionError("Not connected to backend")
+            raise BackendConnectionError("Not connected to Backend")
 
         logger.debug(f"JavaBackend.call({action}, {params})")
 
@@ -414,7 +414,7 @@ class JavaBackend(IMediaManagerBackend):
 
     def _handle_error_response(self, response, action: str) -> None:
         """
-        Handle error response from Java backend.
+        Handle error response from Java Backend.
 
         Args:
             response: Protocol buffer response

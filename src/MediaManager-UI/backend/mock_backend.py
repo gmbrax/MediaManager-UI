@@ -1,7 +1,7 @@
 """
-Mock backend for MediaManager UI development.
+Mock Backend for MediaManager UI development.
 
-This backend provides fake data for development and testing without
+This Backend provides fake data for development and testing without
 requiring the Java core to be running.
 """
 
@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 
 class MockBackend(IMediaManagerBackend):
     """
-    Mock backend with in-memory fake data.
+    Mock Backend with in-memory fake data.
 
-    This allows UI development without the Java backend running.
+    This allows UI development without the Java Backend running.
     Data is reset on each restart (not persistent).
     """
 
     def __init__(self):
-        """Initialize mock backend with fake data."""
+        """Initialize mock Backend with fake data."""
         self._connected = False
         self._next_id = 100  # Start IDs at 100 to avoid conflicts
 
@@ -88,7 +88,7 @@ class MockBackend(IMediaManagerBackend):
             BackendNotFoundError: If entity not found
         """
         if not self._connected:
-            raise BackendConnectionError("Not connected to backend")
+            raise BackendConnectionError("Not connected to Backend")
 
         logger.debug(f"MockBackend.call({action}, {params})")
 

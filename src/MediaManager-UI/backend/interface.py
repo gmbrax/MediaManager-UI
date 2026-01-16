@@ -1,7 +1,7 @@
 """
-Abstract backend interface for MediaManager.
+Abstract Backend interface for MediaManager.
 
-This module defines the contract that all backend implementations must follow.
+This module defines the contract that all Backend implementations must follow.
 Controllers depend on this interface, not concrete implementations.
 """
 
@@ -11,10 +11,10 @@ from typing import Any, Dict, List, Optional
 
 class IMediaManagerBackend(ABC):
     """
-    Abstract interface for MediaManager backend communication.
+    Abstract interface for MediaManager Backend communication.
 
-    All backend implementations (Mock, Java) must implement this interface.
-    This allows Controllers to work with any backend without knowing the implementation.
+    All Backend implementations (Mock, Java) must implement this interface.
+    This allows Controllers to work with any Backend without knowing the implementation.
 
     Design Pattern: Strategy Pattern + Dependency Injection
     """
@@ -22,7 +22,7 @@ class IMediaManagerBackend(ABC):
     @abstractmethod
     def connect(self) -> None:
         """
-        Connect to backend.
+        Connect to Backend.
 
         For MockBackend: Does nothing (always "connected")
         For JavaBackend: Opens Unix socket connection
@@ -35,7 +35,7 @@ class IMediaManagerBackend(ABC):
     @abstractmethod
     def disconnect(self) -> None:
         """
-        Disconnect from backend.
+        Disconnect from Backend.
 
         For MockBackend: Does nothing
         For JavaBackend: Closes socket connection
@@ -45,7 +45,7 @@ class IMediaManagerBackend(ABC):
     @abstractmethod
     def is_connected(self) -> bool:
         """
-        Check if backend is connected.
+        Check if Backend is connected.
 
         Returns:
             True if connected and ready, False otherwise
@@ -55,9 +55,9 @@ class IMediaManagerBackend(ABC):
     @abstractmethod
     def call(self, action: str, **params) -> Any:
         """
-        Generic call to backend action.
+        Generic call to Backend action.
 
-        This is the main method for all backend operations.
+        This is the main method for all Backend operations.
 
         Args:
             action: Action name (e.g., "genre.create", "artist.getAll", "album.getById")
@@ -67,31 +67,31 @@ class IMediaManagerBackend(ABC):
             Action result (dict for single entity, list for multiple)
 
         Raises:
-            BackendException: Base exception for all backend errors
+            BackendException: Base exception for all Backend errors
             BackendConnectionError: Connection/communication errors
             BackendValidationError: Validation errors (400)
             BackendNotFoundError: Entity not found (404)
-            BackendInternalError: Internal backend errors (500)
+            BackendInternalError: Internal Backend errors (500)
 
         Examples:
             >>> # Create genre
-            >>> result = backend.call("genre.create", name="Rock")
+            >>> result = Backend.call("genre.create", name="Rock")
             >>> # Returns: {"id": 1, "name": "Rock"}
 
             >>> # Get all genres
-            >>> results = backend.call("genre.getAll")
+            >>> results = Backend.call("genre.getAll")
             >>> # Returns: [{"id": 1, "name": "Rock"}, {"id": 2, "name": "Jazz"}]
 
             >>> # Get by ID
-            >>> result = backend.call("genre.getById", id=1)
+            >>> result = Backend.call("genre.getById", id=1)
             >>> # Returns: {"id": 1, "name": "Rock"}
 
             >>> # Update
-            >>> result = backend.call("genre.update", id=1, name="Hard Rock")
+            >>> result = Backend.call("genre.update", id=1, name="Hard Rock")
             >>> # Returns: {"id": 1, "name": "Hard Rock"}
 
             >>> # Delete
-            >>> result = backend.call("genre.delete", id=1)
+            >>> result = Backend.call("genre.delete", id=1)
             >>> # Returns: {"success": True}
         """
         pass
@@ -128,7 +128,7 @@ class IMediaManagerBackend(ABC):
 
 class BackendException(Exception):
     """
-    Base exception for all backend errors.
+    Base exception for all Backend errors.
 
     Attributes:
         message: Error message
@@ -161,7 +161,7 @@ class BackendException(Exception):
 
 class BackendConnectionError(BackendException):
     """
-    Raised when backend connection/communication fails.
+    Raised when Backend connection/communication fails.
 
     Examples:
         - Socket not found
@@ -174,7 +174,7 @@ class BackendConnectionError(BackendException):
 
 class BackendValidationError(BackendException):
     """
-    Raised when backend validation fails (HTTP 400).
+    Raised when Backend validation fails (HTTP 400).
 
     Examples:
         - Invalid parameters
@@ -199,7 +199,7 @@ class BackendNotFoundError(BackendException):
 
 class BackendInternalError(BackendException):
     """
-    Raised when backend has internal error (HTTP 500).
+    Raised when Backend has internal error (HTTP 500).
 
     Examples:
         - Database errors

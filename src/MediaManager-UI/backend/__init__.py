@@ -1,7 +1,7 @@
 """
 Backend abstraction layer for MediaManager UI.
 
-This package provides an abstract interface for backend communication,
+This package provides an abstract interface for Backend communication,
 allowing easy switching between MockBackend (development/testing) and
 JavaBackend (production with real Java core).
 """

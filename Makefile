@@ -61,4 +61,4 @@ Setup: $(VENV_BIN)/activate
 $(VENV_BIN)/activate:
 	$(PYTHON) -m venv $(VENV)
 	$(VENV_BIN)/pip install --upgrade pip
-	$(VENV_BIN)/pip install protobuf nuitka
+	$(VENV_BIN)/pip install protobuf nuitka pyside6

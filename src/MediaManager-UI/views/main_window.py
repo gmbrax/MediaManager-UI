@@ -6,14 +6,17 @@ SAP-style interface with task tree and MDI area.
 
 import logging
 from typing import Dict
+from unittest import case
 
 from PySide6.QtWidgets import (
     QMainWindow, QTreeWidgetItem, QMdiSubWindow, QListWidget
 )
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Slot, Signal
 
 from backend.interface import IMediaManagerBackend
 from ui.ui_mainwindow import Ui_MediaManagerMain
+
+from views.dialogs.create_dialog import CreateDialog
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +32,7 @@ class MainWindow(QMainWindow):
     - Top: Menu bar
     - Bottom: Status bar
     """
-
+    data_changed = Signal(str)  # Signal com tipo de entidade que mudou
     def __init__(self, backend: IMediaManagerBackend, controllers: Dict):
         """
         Initialize main window.
@@ -38,7 +41,12 @@ class MainWindow(QMainWindow):
             backend: Backend instance
             controllers: Dictionary of controllers
         """
+
+
+
         super().__init__()
+
+        self._open_windows = {}
 
         self.backend = backend
         self.controllers = controllers
@@ -67,39 +75,63 @@ class MainWindow(QMainWindow):
         library_root.setExpanded(True)
 
         # Library items
-        genres_item = QTreeWidgetItem(library_root)
-        genres_item.setText(0, "🎸 Genres")
-        genres_item.setData(0, Qt.UserRole, "genres")
-
-        artists_item = QTreeWidgetItem(library_root)
-        artists_item.setText(0, "🎤 Artists")
-        artists_item.setData(0, Qt.UserRole, "artists")
-
-        albums_item = QTreeWidgetItem(library_root)
-        albums_item.setText(0, "💿 Albums")
-        albums_item.setData(0, Qt.UserRole, "albums")
-
-        tracks_item = QTreeWidgetItem(library_root)
-        tracks_item.setText(0, "🎵 Tracks")
-        tracks_item.setData(0, Qt.UserRole, "tracks")
+        view_item = QTreeWidgetItem(library_root)
+        view_item.setText(0,"View Library")
+        view_item.setData(0,Qt.UserRole,{"action":"view"})
 
         # === ACTIONS Section ===
         actions_root = QTreeWidgetItem(self.ui.taskTreeWidget)
         actions_root.setText(0, "⚡ Actions")
         actions_root.setExpanded(True)
 
-        # Action items
-        create_item = QTreeWidgetItem(actions_root)
-        create_item.setText(0, "➕ Create")
-        create_item.setData(0, Qt.UserRole, "create")
+        genres_item = QTreeWidgetItem(actions_root)
+        genres_item.setText(0,"Genres")
+        genres_item.setExpanded(True)
 
-        update_item = QTreeWidgetItem(actions_root)
-        update_item.setText(0, "✏️ Update")
-        update_item.setData(0, Qt.UserRole, "update")
+        genres_create_item = QTreeWidgetItem(genres_item)
+        genres_create_item.setText(0, "Create")
+        genres_create_item.setData(0, Qt.UserRole, {"entity":"genre","action":"create"})
 
-        delete_item = QTreeWidgetItem(actions_root)
-        delete_item.setText(0, "🗑️ Delete")
-        delete_item.setData(0, Qt.UserRole, "delete")
+        genres_update_item = QTreeWidgetItem(genres_item)
+        genres_update_item.setText(0, "Update")
+        genres_update_item.setData(0, Qt.UserRole, {"entity":"genre","action":"update"})
+
+        genres_delete_item = QTreeWidgetItem(genres_item)
+        genres_delete_item.setText(0, "Delete")
+        genres_delete_item.setData(0,Qt.UserRole, {"entity":"genre","action":"delete"})
+
+        artists_item = QTreeWidgetItem(actions_root)
+        artists_item.setText(0,"Artists")
+        artists_item.setExpanded(True)
+
+        artists_create_item = QTreeWidgetItem(artists_item)
+        artists_create_item.setText(0, "Create")
+        artists_create_item.setData(0, Qt.UserRole, {"entity":"artist","action":"create"})
+
+        artists_update_item = QTreeWidgetItem(artists_item)
+        artists_update_item.setText(0, "Update")
+        artists_update_item.setData(0, Qt.UserRole, {"entity":"artist","action":"update"})
+
+        artists_delete_item = QTreeWidgetItem(artists_item)
+        artists_delete_item.setText(0, "Delete")
+        artists_delete_item.setData(0, Qt.UserRole, {"entity":"artist","action":"delete"})
+
+        albums_item = QTreeWidgetItem(actions_root)
+        albums_item.setText(0,"Albums")
+        albums_item.setExpanded(True)
+
+        albums_create_item = QTreeWidgetItem(albums_item)
+        albums_create_item.setText(0, "Create")
+        albums_create_item.setData(0, Qt.UserRole, {"entity":"album","action":"create"})
+
+        albums_update_item = QTreeWidgetItem(albums_item)
+        albums_update_item.setText(0, "Update")
+        albums_update_item.setData(0, Qt.UserRole, {"entity":"album","action":"update"})
+
+        albums_delete_item = QTreeWidgetItem(albums_item)
+        albums_delete_item.setText(0, "Delete")
+        albums_delete_item.setData(0, Qt.UserRole, {"entity":"album","action":"delete"})
+
 
         # Connect click signal
         self.ui.taskTreeWidget.itemClicked.connect(self._on_task_clicked)
@@ -138,40 +170,84 @@ class MainWindow(QMainWindow):
     def _on_task_clicked(self, item, column):
         """Handle task tree item click."""
 
-        task = item.data(0, Qt.UserRole)
-
-        if not task:
+        data = item.data(0,Qt.UserRole)
+        if not data:
             return
+        action = data.get("action")
+        entity = data.get("entity")
+        logger.info(f"Task tree item clicked: {action} {entity}")
+        if action == "view":
+            self._on_open_library_viewer()
 
-        logger.info(f"Task clicked: {task}")
+        match action:
+            case "create":
+                self._on_create_clicked(entity)
+            case "update":
+                self._on_update_clicked(entity)
+            case "delete":
+                self._on_delete_clicked(entity)
 
-        if task == "genres":
-            self.ui.statusbar.showMessage("Opening Genres...", 2000)
-            self._open_genres_window()
+    def _on_create_clicked(self, entity):
+        """Handle create button click."""
 
-        elif task == "artists":
-            self.ui.statusbar.showMessage("Opening Artists...", 2000)
-            self._open_artists_window()
+        # Define window key (unique per entity type)
+        window_key = f"create_{entity}"
 
-        elif task == "albums":
-            self.ui.statusbar.showMessage("Opening Albums...", 2000)
-            self._open_albums_window()
+        # Check if window already exists
+        if window_key in self._open_windows:
+            existing = self._open_windows[window_key]
+            if existing in self.ui.mdiArea.subWindowList():
+                # Focus existing window
+                self.ui.mdiArea.setActiveSubWindow(existing)
+                existing.raise_()
+                existing.setFocus()
+                self.ui.statusbar.showMessage(f"Create {entity.title()} window already open", 2000)
+                logger.info(f"Focused existing create window: {entity}")
+                return
+            else:
+                # Window was closed - remove from tracking
+                del self._open_windows[window_key]
 
-        elif task == "tracks":
-            self.ui.statusbar.showMessage("Opening Tracks...", 2000)
-            # TODO
+        # Create new dialog
+        dialog = CreateDialog(entity, self.ui.mdiArea, self)
 
-        elif task == "create":
-            self.ui.statusbar.showMessage("Create action", 2000)
-            # TODO
+        # Connect signal
+        dialog.create.connect(lambda data: self._do_create(entity, data))
 
-        elif task == "update":
-            self.ui.statusbar.showMessage("Update action", 2000)
-            # TODO
+        # Show and track
+        dialog.show()
+        self._open_windows[window_key] = dialog.sub
 
-        elif task == "delete":
-            self.ui.statusbar.showMessage("Delete action", 2000)
-            # TODO
+        # Cleanup on close
+        def on_closed():
+            if window_key in self._open_windows:
+                del self._open_windows[window_key]
+
+        dialog.sub.destroyed.connect(on_closed)
+
+        logger.info(f"Create dialog opened for: {entity}")
+
+    def _on_update_clicked(self, entity):
+        """Handle update button click."""
+        match entity:
+            case "genre":
+                pass
+            case "artist":
+                pass
+            case "album":
+                pass
+        logger.info(f"Update button clicked: {entity}")
+
+    def _on_delete_clicked(self, entity):
+        """Handle delete button click."""
+        match entity:
+            case "genre":
+                pass
+            case "artist":
+                pass
+            case "album":
+                pass
+        logger.info(f"Delete button clicked: {entity}")
 
     # ========================================================================
     # MDI WINDOWS
@@ -235,6 +311,64 @@ class MainWindow(QMainWindow):
         logger.info("Albums window opened")
 
     # ========================================================================
+    # MDI WINDOW MANAGEMENT
+    # ========================================================================
+
+    def _get_or_create_window(self, window_key: str, window_title: str, widget) -> QMdiSubWindow:
+        """
+        Get existing window or create new one.
+
+        Prevents duplicate windows in MDI area.
+
+        Args:
+            window_key: Unique key for window (e.g., "create_genre", "list_artists")
+            window_title: Title for window
+            widget: Widget to display in window
+
+        Returns:
+            QMdiSubWindow instance
+        """
+        # Check if window already exists and is still open
+        if window_key in self._open_windows:
+            existing_window = self._open_windows[window_key]
+
+            # Verify window is still in MDI area (not closed)
+            if existing_window in self.ui.mdiArea.subWindowList():
+                # Window exists - activate and focus it
+                self.ui.mdiArea.setActiveSubWindow(existing_window)
+                existing_window.raise_()
+                existing_window.setFocus()
+                logger.info(f"Activated existing window: {window_key}")
+                return existing_window
+            else:
+                # Window was closed - remove from tracking
+                del self._open_windows[window_key]
+
+        # Create new window
+        sub = QMdiSubWindow()
+        sub.setWidget(widget)
+        sub.setWindowTitle(window_title)
+        sub.setAttribute(Qt.WA_DeleteOnClose)
+
+        # Track window
+        self._open_windows[window_key] = sub
+
+        # Connect close event to cleanup tracking
+        def on_window_closed():
+            if window_key in self._open_windows:
+                del self._open_windows[window_key]
+                logger.info(f"Window closed and untracked: {window_key}")
+
+        sub.destroyed.connect(on_window_closed)
+
+        # Add to MDI area
+        self.ui.mdiArea.addSubWindow(sub)
+
+        logger.info(f"Created new window: {window_key}")
+        return sub
+
+
+    # ========================================================================
     # MENU ACTIONS - Library
     # ========================================================================
 
@@ -263,18 +397,46 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_open_library_viewer(self):
         """Open library viewer window."""
-        from PySide6.QtWidgets import QTextEdit
+
+        window_key = "library_viewer"
+
+        # Check for existing window
+        if window_key in self._open_windows:
+            existing = self._open_windows[window_key]
+            if existing in self.ui.mdiArea.subWindowList():
+                self.ui.mdiArea.setActiveSubWindow(existing)
+                existing.raise_()
+                self.ui.statusbar.showMessage("Library Viewer already open", 2000)
+                return
+            else:
+                del self._open_windows[window_key]
 
         self.ui.statusbar.showMessage("Opening Library Viewer...", 2000)
 
-        viewer = QTextEdit()
-        viewer.setPlainText("Library Viewer\n\nGenres:\n- Rock\n- Jazz\n- Blues")
-        viewer.setReadOnly(True)
+        # Create viewer widget
+        from views.widgets.library_viewer_widget import LibraryViewerWidget
+        viewer = LibraryViewerWidget(self.controllers)
 
+        # CONECTA SIGNAL DE ATUALIZAÇÃO! ← IMPORTANTE!
+        self.data_changed.connect(viewer.refresh)
+
+        # Create MDI window
         sub = QMdiSubWindow()
         sub.setWidget(viewer)
-        sub.setWindowTitle("Library Viewer")
+        sub.setWindowTitle("📚 Library Viewer")
         sub.setAttribute(Qt.WA_DeleteOnClose)
+        sub.resize(600, 500)
+
+        # Track window
+        self._open_windows[window_key] = sub
+
+        def on_closed():
+            # Desconecta signal quando fechar
+            self.data_changed.disconnect(viewer.refresh)
+            if window_key in self._open_windows:
+                del self._open_windows[window_key]
+
+        sub.destroyed.connect(on_closed)
 
         self.ui.mdiArea.addSubWindow(sub)
         sub.show()
@@ -288,6 +450,20 @@ class MainWindow(QMainWindow):
 
         self.ui.statusbar.showMessage("Opening Statistics...", 2000)
 
+        window_key = "Statistics"
+
+        # Check for existing window
+        if window_key in self._open_windows:
+            existing = self._open_windows[window_key]
+            if existing in self.ui.mdiArea.subWindowList():
+                self.ui.mdiArea.setActiveSubWindow(existing)
+                existing.raise_()
+                self.ui.statusbar.showMessage("Statistics already open", 2000)
+                return
+            else:
+                del self._open_windows[window_key]
+
+
         stats = QTextEdit()
         stats.setPlainText("Statistics\n\nTotal Albums: 5\nTotal Artists: 7\nTotal Genres: 8")
         stats.setReadOnly(True)
@@ -300,7 +476,17 @@ class MainWindow(QMainWindow):
         self.ui.mdiArea.addSubWindow(sub)
         sub.show()
 
+        # Track window
+        self._open_windows[window_key] = sub
+
+        def on_closed():
+            if window_key in self._open_windows:
+                del self._open_windows[window_key]
+
+        sub.destroyed.connect(on_closed)
+
         logger.info("Statistics opened")
+        logger.info(self.ui.mdiArea.subWindowList())
 
     @Slot()
     def _on_open_settings(self):
@@ -332,8 +518,8 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "About MediaManager",
-            "<h2>MediaManager</h2>"
-            "<p>Version 0.1.0</p>"
+            "<h1>MediaManager</h1>"
+            "<p>Version 0.0.1</p>"
             "<p>Modern music library manager with SAP-style interface.</p>"
             "<p>Built with Python, Qt6, and Java.</p>"
         )
@@ -341,8 +527,42 @@ class MainWindow(QMainWindow):
         logger.info("About dialog shown")
 
     # ========================================================================
+    # CRUD OPERATIONS
+    # ========================================================================
+
+    def _do_create(self, entity: str, data: dict):
+        """Actually create the entity via controller."""
+        controller = self.controllers.get(entity)
+
+        if not controller:
+            logger.error(f"No controller found for {entity}")
+            return
+
+        try:
+            result = controller.create(**data)
+            logger.info(f"Created {entity}: {result}")
+            self.ui.statusbar.showMessage(
+                f"{entity.title()} '{data['name']}' created successfully!",
+                3000
+            )
+
+            # EMITE SIGNAL! ← ADICIONA ISSO
+            self.data_changed.emit(entity)
+
+        except Exception as e:
+            logger.error(f"Failed to create {entity}: {e}", exc_info=True)
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to create {entity}: {str(e)}"
+            )
+
+    # ========================================================================
     # CLEANUP
     # ========================================================================
+
+
 
     def closeEvent(self, event):
         """Handle window close event."""

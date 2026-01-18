@@ -112,8 +112,13 @@ def main():
 
     # Create application
     app = QApplication(sys.argv)
+    app.setStyle("Windows")
     app.setApplicationName("MediaManager")
     app.setOrganizationName("MediaManager")
+
+    current_style = app.style().objectName()
+    logger.info(f"Qt style set to: {current_style}")
+    print(f"Current Qt style: {current_style}")  # Print também pra garantir
 
     # Show splash screen
     splash = SplashScreen()
